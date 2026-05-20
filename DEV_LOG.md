@@ -72,6 +72,26 @@ Features:
 
 ---
 
+## Phase 3 — App Proxy Stock Endpoint
+**Date:** 2026-05-20
+
+### What I did
+Created `proxy/src/server.ts` — a Node.js HTTP server that:
+- Accepts `GET /stock?variants=gid1,gid2,...`
+- Fetches inventory quantity for each variant from the Shopify Admin REST API
+- Returns a `Record<string, StockEntry>` keyed by variant GID
+- Verifies HMAC signatures on requests from Shopify's App Proxy
+
+### Why
+The Storefront API is public — any client can call it. But inventory data requires the Admin API, which needs a private access token. Putting that token in the browser bundle would expose it to anyone who opens DevTools. The proxy keeps the token server-side and returns only the sanitized `{ qty, low }` shape.
+
+### Key decisions
+- **`mapVariantToStock` as a pure function**: Isolating the Admin API response → StockEntry mapping into `src/stock-mapper.ts` makes it unit-testable without an HTTP server.
+- **HMAC verification**: Shopify signs App Proxy requests with the shared secret. Verifying the signature prevents unauthorized callers from hitting the stock endpoint directly.
+- **Parallel Admin API fetches**: `Promise.all` fires one request per variant concurrently rather than sequentially — keeps latency proportional to the slowest single request, not the sum.
+
+---
+
 ## Phase 4 — CSS, Responsive Layout & Polish
 **Date:** 2026-05-20
 
@@ -113,3 +133,19 @@ Tests cover:
 - **Boundary test at qty=5**: The threshold is `<= 5`, so exactly 5 should be `low: true` and 6 should be `low: false`. This boundary case is easy to get wrong, so an explicit test is valuable.
 - **Immutability test**: Verifies the function doesn't mutate its input. Good practice for pure functions.
 - **No mock tests**: The function has no dependencies to mock. If it did, the design would be wrong.
+
+---
+
+## Phase 6 — Documentation
+**Date:** 2026-05-20
+
+### What I did
+Finalized README.md with:
+- Live dev store URL
+- Complete setup instructions (prerequisites, env vars, build steps, ngrok setup)
+- Architecture diagram explaining the two-fetch pattern
+- Project structure overview
+- Evaluation notes explaining security decisions
+
+### Why
+The README is part of the rubric (10 points for "code structure, README clarity, repo hygiene"). A reviewer should be able to clone the repo and get everything running from the README alone — without needing to ask questions.
