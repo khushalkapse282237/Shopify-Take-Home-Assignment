@@ -1,4 +1,7 @@
-"use strict";(()=>{var y=`
+"use strict";
+(() => {
+  // src/featured-collection.ts
+  var COLLECTION_QUERY = `
   query FeaturedCollection($handle: String!, $count: Int!) {
     collection(handle: $handle) {
       products(first: $count) {
@@ -25,7 +28,74 @@
       }
     }
   }
-`;function S(e){let n=parseFloat(e.amount);return new Intl.NumberFormat("en-GB",{style:"currency",currency:e.currencyCode}).format(n)}function v(e){let n=e.dataset.sectionId??"",r=e.dataset.collectionHandle??"",t=e.dataset.storefrontToken??"",c=parseInt(e.dataset.productCount??"4",10),o=e.dataset.proxyUrl??"",a=window.Shopify?.shop??window.location.hostname;return!r||!t?null:{sectionId:n,collectionHandle:r,storefrontToken:t,productCount:c,proxyUrl:o,shopDomain:a}}async function h(e){try{let n=`https://${e.shopDomain}/api/2024-10/graphql.json`,r=await fetch(n,{method:"POST",headers:{"Content-Type":"application/json","X-Shopify-Storefront-Access-Token":e.storefrontToken},body:JSON.stringify({query:y,variables:{handle:e.collectionHandle,count:e.productCount}})});if(!r.ok)return null;let t=await r.json();return t.errors&&t.errors.length>0?null:t.data.collection?.products.nodes??null}catch{return null}}async function d(e,n){if(!n||e.length===0)return null;try{let r=new URLSearchParams({variants:e.join(",")}),t=await fetch(`${n}?${r.toString()}`);return t.ok?await t.json():null}catch{return null}}function b(e,n){e.innerHTML=Array.from({length:n}).map(()=>`
+`;
+  function formatMoney(money) {
+    const amount = parseFloat(money.amount);
+    const formatter = new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: money.currencyCode
+    });
+    return formatter.format(amount);
+  }
+  function getSectionConfig(el) {
+    const sectionId = el.dataset.sectionId ?? "";
+    const collectionHandle = el.dataset.collectionHandle ?? "";
+    const storefrontToken = el.dataset.storefrontToken ?? "";
+    const productCount = parseInt(el.dataset.productCount ?? "4", 10);
+    const proxyUrl = el.dataset.proxyUrl ?? "";
+    const shopDomain = window.Shopify?.shop ?? window.location.hostname;
+    if (!collectionHandle || !storefrontToken) {
+      return null;
+    }
+    return { sectionId, collectionHandle, storefrontToken, productCount, proxyUrl, shopDomain };
+  }
+  async function fetchCollection(config) {
+    try {
+      const endpoint = `https://${config.shopDomain}/api/2024-10/graphql.json`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Storefront-Access-Token": config.storefrontToken
+        },
+        body: JSON.stringify({
+          query: COLLECTION_QUERY,
+          variables: {
+            handle: config.collectionHandle,
+            count: config.productCount
+          }
+        })
+      });
+      if (!response.ok) {
+        return null;
+      }
+      const json = await response.json();
+      if (json.errors && json.errors.length > 0) {
+        return null;
+      }
+      return json.data.collection?.products.nodes ?? null;
+    } catch {
+      return null;
+    }
+  }
+  async function fetchStock(variantGids, proxyUrl) {
+    if (!proxyUrl || variantGids.length === 0)
+      return null;
+    try {
+      const params = new URLSearchParams({ variants: variantGids.join(",") });
+      const response = await fetch(`${proxyUrl}?${params.toString()}`, {
+        headers: { "ngrok-skip-browser-warning": "true" }
+      });
+      if (!response.ok)
+        return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
+  function renderSkeletons(grid, count) {
+    grid.innerHTML = Array.from({ length: count }).map(
+      () => `
       <div class="fcs-card fcs-card--skeleton" aria-hidden="true">
         <div class="fcs-skeleton fcs-skeleton--image"></div>
         <div class="fcs-card__body">
@@ -33,32 +103,158 @@
           <div class="fcs-skeleton fcs-skeleton--price"></div>
           <div class="fcs-skeleton fcs-skeleton--link"></div>
         </div>
-      </div>`).join("")}function u(e,n,r){e.innerHTML=n.map(t=>{let c=t.variants.nodes[0]?.id??"",o=t.featuredImage?`<img
-            src="${t.featuredImage.url}"
-            alt="${t.featuredImage.altText??t.title}"
+      </div>`
+    ).join("");
+  }
+  function renderProducts(grid, products, config) {
+    grid.innerHTML = products.map((product) => {
+      const variantGid = product.variants.nodes[0]?.id ?? "";
+      const imageHtml = product.featuredImage ? `<img
+            src="${product.featuredImage.url}"
+            alt="${product.featuredImage.altText ?? product.title}"
             loading="lazy"
             class="fcs-card__image"
-          />`:'<div class="fcs-card__image-placeholder"></div>',a=t.badgeLabel?`<span class="fcs-badge">${t.badgeLabel.value}</span>`:"",i=S(t.priceRange.minVariantPrice);return`
+          />` : `<div class="fcs-card__image-placeholder"></div>`;
+      const badgeHtml = product.badgeLabel ? `<span class="fcs-badge">${product.badgeLabel.value}</span>` : "";
+      const price = formatMoney(product.priceRange.minVariantPrice);
+      return `
         <div
           class="fcs-card"
-          data-product-handle="${t.handle}"
-          data-variant-gid="${c}"
+          data-product-handle="${product.handle}"
+          data-variant-gid="${variantGid}"
         >
           <div class="fcs-card__image-wrap">
-            ${a}
-            ${o}
+            ${badgeHtml}
+            ${imageHtml}
           </div>
           <div class="fcs-card__body">
-            <h3 class="fcs-card__title">${t.title}</h3>
-            <p class="fcs-card__price">${i}</p>
-            <a href="/products/${t.handle}" class="fcs-card__link">
+            <h3 class="fcs-card__title">${product.title}</h3>
+            <p class="fcs-card__price">${price}</p>
+            <a href="/products/${product.handle}" class="fcs-card__link">
               View product \u2192
             </a>
           </div>
-        </div>`}).join("")}function f(e,n){e.querySelectorAll("[data-variant-gid]").forEach(t=>{let c=t.dataset.variantGid;if(!c)return;if(n[c]?.low){let a=t.querySelector(".fcs-card__body");if(a&&!a.querySelector(".fcs-low-stock")){let i=document.createElement("span");i.className="fcs-low-stock",i.textContent="Low stock";let s=a.querySelector(".fcs-card__price");s?s.insertAdjacentElement("afterend",i):a.prepend(i)}}})}function P(e,n){return n==="featured"?[...e]:[...e].sort((r,t)=>{let c=parseFloat(r.priceRange.minVariantPrice.amount),o=parseFloat(t.priceRange.minVariantPrice.amount);return n==="price-asc"?c-o:o-c})}function L(e){let n=e.querySelector(".fcs-sort");if(n)return n;let r=document.createElement("div");r.className="fcs-sort-wrap",r.innerHTML=`
-    <label class="fcs-sort-label" for="fcs-sort-${e.dataset.sectionId}">Sort by:</label>
-    <select class="fcs-sort" id="fcs-sort-${e.dataset.sectionId}">
+        </div>`;
+    }).join("");
+  }
+  function applyStockBadges(grid, stock) {
+    const cards = grid.querySelectorAll("[data-variant-gid]");
+    cards.forEach((card) => {
+      const gid = card.dataset.variantGid;
+      if (!gid)
+        return;
+      const entry = stock[gid];
+      if (entry?.low) {
+        const body = card.querySelector(".fcs-card__body");
+        if (body && !body.querySelector(".fcs-low-stock")) {
+          const badge = document.createElement("span");
+          badge.className = "fcs-low-stock";
+          badge.textContent = "Low stock";
+          const priceEl = body.querySelector(".fcs-card__price");
+          if (priceEl) {
+            priceEl.insertAdjacentElement("afterend", badge);
+          } else {
+            body.prepend(badge);
+          }
+        }
+      }
+    });
+  }
+  function sortProducts(products, order) {
+    if (order === "featured")
+      return [...products];
+    return [...products].sort((a, b) => {
+      const aPrice = parseFloat(a.priceRange.minVariantPrice.amount);
+      const bPrice = parseFloat(b.priceRange.minVariantPrice.amount);
+      return order === "price-asc" ? aPrice - bPrice : bPrice - aPrice;
+    });
+  }
+  function renderSortControl(sectionEl) {
+    const existing = sectionEl.querySelector(".fcs-sort");
+    if (existing)
+      return existing;
+    const wrapper = document.createElement("div");
+    wrapper.className = "fcs-sort-wrap";
+    wrapper.innerHTML = `
+    <label class="fcs-sort-label" for="fcs-sort-${sectionEl.dataset.sectionId}">Sort by:</label>
+    <select class="fcs-sort" id="fcs-sort-${sectionEl.dataset.sectionId}">
       <option value="featured">Featured</option>
       <option value="price-asc">Price: Low \u2192 High</option>
       <option value="price-desc">Price: High \u2192 Low</option>
-    </select>`;let t=e.querySelector(".fcs-header");return t&&t.insertAdjacentElement("afterend",r),r.querySelector(".fcs-sort")}function p(e){let n=v(e);if(!n)return;let r=e.querySelector("[data-product-grid]");if(!r)return;let t=[];async function c(){b(r,n.productCount);let o=await h(n);if(!o){r.innerHTML='<p class="fcs-empty">Could not load products.</p>';return}t=o;let a=L(e);u(r,o,n);let i=o.map(s=>s.variants.nodes[0]?.id).filter(s=>!!s);d(i,n.proxyUrl).then(s=>{s&&f(r,s)}),a.addEventListener("change",()=>{let s=a.value,g=P(t,s);u(r,g,n),d(i,n.proxyUrl).then(l=>{l&&f(r,l)})})}"IntersectionObserver"in window?new IntersectionObserver((a,i)=>{a.forEach(s=>{s.isIntersecting&&(i.unobserve(e),c())})},{rootMargin:"200px"}).observe(e):c()}function m(){document.querySelectorAll("[data-section-id][data-collection-handle]").forEach(p)}document.addEventListener("shopify:section:load",e=>{let n=e,r=document.querySelector(`[data-section-id="${n.detail.sectionId}"]`);r&&p(r)});document.readyState==="loading"?document.addEventListener("DOMContentLoaded",m):m();})();
+    </select>`;
+    const header = sectionEl.querySelector(".fcs-header");
+    if (header) {
+      header.insertAdjacentElement("afterend", wrapper);
+    }
+    return wrapper.querySelector(".fcs-sort");
+  }
+  function initSection(sectionEl) {
+    const config = getSectionConfig(sectionEl);
+    if (!config)
+      return;
+    const grid = sectionEl.querySelector("[data-product-grid]");
+    if (!grid)
+      return;
+    let allProducts = [];
+    async function loadProducts() {
+      renderSkeletons(grid, config.productCount);
+      const products = await fetchCollection(config);
+      if (!products) {
+        grid.innerHTML = '<p class="fcs-empty">Could not load products.</p>';
+        return;
+      }
+      allProducts = products;
+      const sortSelect = renderSortControl(sectionEl);
+      renderProducts(grid, products, config);
+      const variantGids = products.map((p) => p.variants.nodes[0]?.id).filter((id) => Boolean(id));
+      fetchStock(variantGids, config.proxyUrl).then((stock) => {
+        if (stock)
+          applyStockBadges(grid, stock);
+      });
+      sortSelect.addEventListener("change", () => {
+        const order = sortSelect.value;
+        const sorted = sortProducts(allProducts, order);
+        renderProducts(grid, sorted, config);
+        fetchStock(variantGids, config.proxyUrl).then((stock) => {
+          if (stock)
+            applyStockBadges(grid, stock);
+        });
+      });
+    }
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        (entries, obs) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              obs.unobserve(sectionEl);
+              loadProducts();
+            }
+          });
+        },
+        { rootMargin: "200px" }
+        // Start loading 200px before section enters viewport
+      );
+      observer.observe(sectionEl);
+    } else {
+      loadProducts();
+    }
+  }
+  function bootstrap() {
+    const sections = document.querySelectorAll("[data-section-id][data-collection-handle]");
+    sections.forEach(initSection);
+  }
+  document.addEventListener("shopify:section:load", (event) => {
+    const e = event;
+    const el = document.querySelector(
+      `[data-section-id="${e.detail.sectionId}"]`
+    );
+    if (el)
+      initSection(el);
+  });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootstrap);
+  } else {
+    bootstrap();
+  }
+})();
+//# sourceMappingURL=featured-collection.js.map
