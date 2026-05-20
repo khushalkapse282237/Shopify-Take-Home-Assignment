@@ -38,3 +38,34 @@ The Liquid baseline ensures the section is usable even if JavaScript is blocked 
 - **`data-variant-gid` on each card**: The full GID format (`gid://shopify/ProductVariant/ID`) is what the Storefront API and our proxy use. Constructing it in Liquid avoids string manipulation in TypeScript.
 - **`defer` on script tag**: Prevents the JS bundle from blocking HTML parsing. The Liquid baseline is visible immediately; JS enhances it after parse.
 - **Proxy URL as a section setting**: Allows the merchant (or developer) to update the proxy URL from the theme editor without touching code. Important for local dev (ngrok URL changes every restart).
+
+---
+
+## Phase 2 — TypeScript Storefront Client
+**Date:** 2026-05-20
+
+### What I did
+Created `src/featured-collection.ts` — compiles to `assets/featured-collection.js`.
+
+Features:
+- Typed interfaces for the full Storefront API response (no `any`)
+- IntersectionObserver defers fetch until section enters viewport
+- Skeleton loading cards while Storefront API fetch is in-flight
+- GraphQL query fetches: title, handle, featured image, price range, `custom.badge_label` metafield
+- Re-renders product cards with live data on success
+- Non-blocking second fetch to App Proxy for stock levels
+- `applyStockBadges()` adds "Low stock" pill to cards where `low === true`
+- Client-side sort by price using in-memory products array (no new fetch)
+- Fails silently on error — shows a fallback message
+
+### Why
+**Progressive enhancement**: The Liquid baseline (Phase 1) gives immediate content. TypeScript enhances it with live data. If the Storefront API call fails, the page still has Liquid-rendered cards.
+
+**Two-fetch pattern**: Cards must appear before the stock check. Stock data is a "nice to have" overlay — blocking card render on stock would be wrong UX.
+
+**IntersectionObserver**: Avoids fetching data for sections the user never scrolls to. Improves performance, especially on long homepages.
+
+### Key decisions
+- **No `any` types**: Used strict typed interfaces. The `StorefrontResponse` interface matches the exact GraphQL shape.
+- **`declare global { Window.Shopify }`**: Shopify injects `window.Shopify.shop` on every storefront page. Declaring it avoids a type error without using `any`.
+- **Sort without refetch**: The `allProducts` array is kept in closure scope. Sort re-renders from memory — fast, no network round-trip.
