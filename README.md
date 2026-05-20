@@ -6,7 +6,7 @@ A Shopify homepage section for **BOTANICA**, a fictional DTC skincare brand. Bui
 
 ## Live Dev Store
 
-**Store URL:** `https://[YOUR-STORE].myshopify.com`
+**Store URL:** `https://botanica-dev-xj2hd1y5.myshopify.com`
 
 > The Featured Collection Showcase section is live on the homepage.
 
