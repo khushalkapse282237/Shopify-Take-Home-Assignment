@@ -92,3 +92,24 @@ CSS Grid with `repeat(4, 1fr)` and media queries is the cleanest approach for th
 - **CSS custom properties (variables)**: Design tokens at `:root` level make it easy for Shopify merchants to override brand colors without touching the CSS logic.
 - **`aspect-ratio: 1/1` on image wrap**: Ensures product images are always square regardless of their natural dimensions. Prevents layout shifts.
 - **Shimmer animation on separate `background-size: 200%`**: Moving the gradient's `background-position` creates the shimmer effect without JavaScript or element cloning.
+
+---
+
+## Phase 5 — Unit Tests
+**Date:** 2026-05-20
+
+### What I did
+Added `tests/stock-mapper.test.ts` with 12 Vitest unit tests covering the `mapVariantToStock` function.
+
+Tests cover:
+- qty field accuracy (4 cases)
+- low flag boundary conditions including exact threshold (6 cases)
+- Return object shape and immutability (2 cases)
+
+### Why
+`mapVariantToStock` is a pure function — no side effects, no HTTP calls, deterministic. Pure functions are the ideal unit-test target. Testing it in isolation gives confidence that the proxy's core logic is correct without needing a real Shopify store.
+
+### Key decisions
+- **Boundary test at qty=5**: The threshold is `<= 5`, so exactly 5 should be `low: true` and 6 should be `low: false`. This boundary case is easy to get wrong, so an explicit test is valuable.
+- **Immutability test**: Verifies the function doesn't mutate its input. Good practice for pure functions.
+- **No mock tests**: The function has no dependencies to mock. If it did, the design would be wrong.

@@ -18,5 +18,9 @@
   },
   "dependencies": {
     "dotenv": "^16.0.0"
+  },
+  "vitest": {
+    "environment": "node",
+    "include": ["tests/**/*.test.ts"]
   }
 }
