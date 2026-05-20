@@ -9,8 +9,8 @@ import * as dotenv from 'dotenv';
 import path from 'path';
 import { mapVariantToStock, StockEntry } from '../../src/stock-mapper';
 
-// Load .env from project root
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Load .env from project root (process.cwd() = dir where npm run was invoked)
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
