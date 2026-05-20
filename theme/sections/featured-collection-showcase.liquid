@@ -102,6 +102,7 @@
 </div>
 
 {%- comment -%} Load TypeScript bundle — deferred so it doesn't block render {%- endcomment -%}
+{{ 'featured-collection.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'featured-collection.js' | asset_url }}" defer></script>
 
 {% schema %}

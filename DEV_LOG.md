@@ -69,3 +69,26 @@ Features:
 - **No `any` types**: Used strict typed interfaces. The `StorefrontResponse` interface matches the exact GraphQL shape.
 - **`declare global { Window.Shopify }`**: Shopify injects `window.Shopify.shop` on every storefront page. Declaring it avoids a type error without using `any`.
 - **Sort without refetch**: The `allProducts` array is kept in closure scope. Sort re-renders from memory — fast, no network round-trip.
+
+---
+
+## Phase 4 — CSS, Responsive Layout & Polish
+**Date:** 2026-05-20
+
+### What I did
+Created `assets/featured-collection.css` with:
+- Design tokens matching the BOTANICA brand (cream bg, DM Serif/Sans fonts)
+- 4-col → 2-col → 1-col responsive grid using CSS Grid
+- Skeleton shimmer animation (`@keyframes fcs-shimmer`)
+- Badge pill styling (green pill for metafield badges)
+- Low stock styling (red text, inline)
+- Highlight block strip (auto-fit grid)
+- Hover effects on product cards
+
+### Why
+CSS Grid with `repeat(4, 1fr)` and media queries is the cleanest approach for this layout. The design PDF shows the exact breakpoints (4 col desktop, 2 col tablet, 1 col mobile).
+
+### Key decisions
+- **CSS custom properties (variables)**: Design tokens at `:root` level make it easy for Shopify merchants to override brand colors without touching the CSS logic.
+- **`aspect-ratio: 1/1` on image wrap**: Ensures product images are always square regardless of their natural dimensions. Prevents layout shifts.
+- **Shimmer animation on separate `background-size: 200%`**: Moving the gradient's `background-position` creates the shimmer effect without JavaScript or element cloning.
