@@ -8,6 +8,14 @@ A Shopify homepage section for **BOTANICA**, a fictional DTC skincare brand. Bui
 
 **Store URL:** `https://botanica-dev-xj2hd1y5.myshopify.com`
 
+## Password for Live Dev Store
+
+**Password:** **beacka**
+
+## Demo Video
+
+**URL:** `https://drive.google.com/file/d/1JE_rF-HOKkzTueoGpab5pW41vm9XFM3Q/view?usp=drive_link`
+
 > The Featured Collection Showcase section is live on the homepage.
 
 ---
