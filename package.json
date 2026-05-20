@@ -6,7 +6,7 @@
     "build": "esbuild src/featured-collection.ts --bundle --outfile=assets/featured-collection.js --platform=browser --target=es2020 --minify",
     "build:dev": "esbuild src/featured-collection.ts --bundle --outfile=assets/featured-collection.js --platform=browser --target=es2020 --sourcemap",
     "build:proxy": "tsc -p proxy/tsconfig.json",
-    "dev:proxy": "node proxy/dist/server.js",
+    "dev:proxy": "node proxy/dist/proxy/src/server.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -15,5 +15,8 @@
     "typescript": "^5.4.0",
     "vitest": "^1.4.0",
     "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0"
   }
 }
