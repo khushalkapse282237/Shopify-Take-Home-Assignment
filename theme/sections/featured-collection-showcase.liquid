@@ -1,0 +1,208 @@
+{%- comment -%}
+  Featured Collection Showcase
+  Renders a product grid from a selected collection.
+  TypeScript (assets/featured-collection.js) enhances this baseline.
+{%- endcomment -%}
+
+<div
+  class="fcs-section color-{{ section.settings.color_scheme }}"
+  id="featured-collection-{{ section.id }}"
+  data-section-id="{{ section.id }}"
+  data-collection-handle="{{ section.settings.collection.handle | default: '' }}"
+  data-storefront-token="{{ settings.storefront_api_token | default: '' }}"
+  data-product-count="{{ section.settings.product_count }}"
+  data-proxy-url="{{ section.settings.proxy_url | default: '' }}"
+>
+  {%- comment -%} ── Section header ── {%- endcomment -%}
+  <div class="fcs-header">
+    {%- if section.settings.collection != blank -%}
+      <p class="fcs-eyebrow">{{ section.settings.collection.title | upcase }}</p>
+    {%- endif -%}
+    <h2 class="fcs-heading">{{ section.settings.heading }}</h2>
+  </div>
+
+  {%- comment -%} ── Product grid (Liquid baseline) ── {%- endcomment -%}
+  <div class="fcs-grid" id="fcs-grid-{{ section.id }}" data-product-grid>
+    {%- assign fcs_collection = section.settings.collection -%}
+    {%- if fcs_collection != blank -%}
+      {%- for product in fcs_collection.products limit: section.settings.product_count -%}
+        {%- assign fcs_variant = product.first_available_variant | default: product.variants.first -%}
+        <div
+          class="fcs-card"
+          data-product-handle="{{ product.handle }}"
+          data-variant-gid="gid://shopify/ProductVariant/{{ fcs_variant.id }}"
+        >
+          <div class="fcs-card__image-wrap">
+            {%- if product.featured_image != blank -%}
+              {{
+                product.featured_image
+                | image_url: width: 600
+                | image_tag:
+                  loading: 'lazy',
+                  class: 'fcs-card__image',
+                  alt: product.featured_image.alt | escape
+              }}
+            {%- else -%}
+              <div class="fcs-card__image-placeholder"></div>
+            {%- endif -%}
+          </div>
+          <div class="fcs-card__body">
+            <h3 class="fcs-card__title">{{ product.title }}</h3>
+            <p class="fcs-card__price">
+              {{- fcs_variant.price | money -}}
+            </p>
+            <a href="{{ product.url }}" class="fcs-card__link">
+              View product →
+            </a>
+          </div>
+        </div>
+      {%- endfor -%}
+    {%- else -%}
+      <p class="fcs-empty">
+        {% if request.design_mode %}
+          Select a collection in the section settings to display products.
+        {% else %}
+          Products coming soon.
+        {% endif %}
+      </p>
+    {%- endif -%}
+  </div>
+
+  {%- comment -%} ── Highlight blocks strip ── {%- endcomment -%}
+  {%- if section.blocks.size > 0 -%}
+    <div class="fcs-highlights">
+      {%- for block in section.blocks -%}
+        {%- case block.type -%}
+          {%- when 'highlight' -%}
+            <div class="fcs-highlight" {{ block.shopify_attributes }}>
+              {%- if block.settings.icon != blank -%}
+                <div class="fcs-highlight__icon">
+                  {{
+                    block.settings.icon
+                    | image_url: width: 48
+                    | image_tag: class: 'fcs-highlight__icon-img', alt: block.settings.label | escape
+                  }}
+                </div>
+              {%- else -%}
+                <div class="fcs-highlight__icon fcs-highlight__icon--placeholder" aria-hidden="true">
+                  ☆
+                </div>
+              {%- endif -%}
+              <div class="fcs-highlight__text">
+                <span class="fcs-highlight__label">{{ block.settings.label }}</span>
+                {%- if block.settings.sub_label != blank -%}
+                  <span class="fcs-highlight__sublabel">{{ block.settings.sub_label }}</span>
+                {%- endif -%}
+              </div>
+            </div>
+        {%- endcase -%}
+      {%- endfor -%}
+    </div>
+  {%- endif -%}
+</div>
+
+{%- comment -%} Load TypeScript bundle — deferred so it doesn't block render {%- endcomment -%}
+<script src="{{ 'featured-collection.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Featured Collection Showcase",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Collection"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading text",
+      "default": "Shop the collection"
+    },
+    {
+      "type": "range",
+      "id": "product_count",
+      "label": "Products to show",
+      "min": 2,
+      "max": 8,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "text",
+      "id": "proxy_url",
+      "label": "App Proxy URL",
+      "info": "Full URL to your stock proxy endpoint, e.g. https://abc123.ngrok.io/stock"
+    },
+    {
+      "type": "select",
+      "id": "color_scheme",
+      "label": "Color scheme",
+      "default": "background-1",
+      "options": [
+        { "value": "background-1", "label": "Default" },
+        { "value": "background-2", "label": "Subtle" },
+        { "value": "inverse", "label": "Inverse" }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "highlight",
+      "name": "Highlight",
+      "limit": 3,
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "icon",
+          "label": "Icon"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Label",
+          "default": "Free UK Shipping",
+          "info": "Short headline for this highlight"
+        },
+        {
+          "type": "text",
+          "id": "sub_label",
+          "label": "Sub-label",
+          "default": "On orders over £50",
+          "info": "Supporting text shown below the label"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Featured Collection Showcase",
+      "blocks": [
+        {
+          "type": "highlight",
+          "settings": {
+            "label": "Free UK Shipping",
+            "sub_label": "On orders over £50"
+          }
+        },
+        {
+          "type": "highlight",
+          "settings": {
+            "label": "Eco packaging",
+            "sub_label": "100% recyclable"
+          }
+        },
+        {
+          "type": "highlight",
+          "settings": {
+            "label": "30-day returns",
+            "sub_label": "No questions asked"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
