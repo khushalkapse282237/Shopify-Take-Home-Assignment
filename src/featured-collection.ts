@@ -176,7 +176,9 @@ async function fetchStock(variantGids: string[], proxyUrl: string): Promise<Stoc
 
   try {
     const params = new URLSearchParams({ variants: variantGids.join(',') });
-    const response = await fetch(`${proxyUrl}?${params.toString()}`);
+    const response = await fetch(`${proxyUrl}?${params.toString()}`, {
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+    });
     if (!response.ok) return null;
     return await response.json() as StockResponse;
   } catch {
